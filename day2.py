@@ -31,6 +31,7 @@ def part2(init):
 
 with open("day2-input.txt", "r") as f:
     inputs = list(map(int, f.read().split(",")))
-    print(part1(inputs))
-    print(part2(inputs))
+
+print(part1(inputs))
+print(part2(inputs))
 
