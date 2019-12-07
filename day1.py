@@ -10,8 +10,7 @@ def fuel_requirement(mass, part1=False):
     return fr + fuel_requirement(fr)
 
 
-with open("day1-input.txt", "r") as f:
-    masses = f.readlines()
+masses = open("day1-input.txt", "r").readlines()
 
 fuel_requirements = 0
 print(sum([fuel_requirement(int(mass), part1=True) for mass in masses]))

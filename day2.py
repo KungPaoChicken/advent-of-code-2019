@@ -1,5 +1,6 @@
 from intcode_computer import parse_intcode
 
+
 def part1(init):
     inputs = init.copy()
     inputs[1], inputs[2] = 12, 2
@@ -15,9 +16,7 @@ def part2(init):
                 return 100 * i + j
 
 
-with open("day2-input.txt", "r") as f:
-    inputs = list(map(int, f.read().split(",")))
+inputs = list(map(int, open("day2-input.txt", "r").read().split(",")))
 
 print(part1(inputs))
 print(part2(inputs))
-
