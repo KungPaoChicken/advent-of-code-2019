@@ -1,6 +1,7 @@
 from intcode_computer import parse_intcode
 
-with open("day5-input.txt") as f:
-    inputs = map(int, f.read().split(","))
+inputs = list(map(int, open("day5-input.txt").read().split(",")))
 
-print(inputs)
+# inputs = list(map(int, "1002,4,3,4,33".split(",")))
+
+print(parse_intcode(inputs, 0))
