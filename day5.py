@@ -1,6 +1,6 @@
-from intcode_computer import parse_intcode
+from intcode_computer import str_to_program, parse_intcode
 
-inputs = list(map(int, open("day5-input.txt").read().split(",")))
+inputs = str_to_program(open("day5-input.txt").read())
 
 # Input 1
 print("Part 1: Input 1")

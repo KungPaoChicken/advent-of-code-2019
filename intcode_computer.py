@@ -53,9 +53,9 @@ def intcode_output(x, i):
     return x
 
 
-def parse_intcode(inputs, ip, disable_jumps=False):
-    if ip >= len(inputs):
-        return inputs
+def parse_intcode(program, ip, disable_jumps=False):
+    if ip >= len(program):
+        return program
     functions = {
         1: cf(3, lambda x, i, j, k: s(x, k, i + j)),
         2: cf(3, lambda x, i, j, k: s(x, k, i * j)),
@@ -70,5 +70,9 @@ def parse_intcode(inputs, ip, disable_jumps=False):
     if disable_jumps:
         for i in [5, 6, 7, 8]:
             functions.pop(i)
-    instruction = read_instruction(inputs, ip)[0]
-    return parse_intcode(*functions.get(instruction)(inputs, ip))
+    instruction = read_instruction(program, ip)[0]
+    return parse_intcode(*functions.get(instruction)(program, ip))
+
+
+def str_to_program(string):
+    return list(map(int, string.split(",")))
