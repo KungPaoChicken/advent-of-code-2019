@@ -8,18 +8,20 @@ def read_parameters(p, i, n, ms):
 
 
 def cf(n, f):
-    return lambda p, ip, inputs: (
+    return lambda p, ip, i, o: (
         f(p, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
         ip + n + 1,
-        inputs,
+        i,
+        o,
     )
 
 
 def cf2(n, f):
-    return lambda p, ip, inputs: (
+    return lambda p, ip, i, o: (
         p,
         f(ip, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
-        inputs,
+        i,
+        o,
     )
 
 
@@ -55,30 +57,30 @@ def intcode_input(inputs=[]):
     return int(input("Input: "))
 
 
-def intcode_output(p, i):
-    print(i)
+def intcode_output(p, i, outputs):
+    outputs.append(i)
     return p
 
 
-def parse_intcode(program, ip, inputs=[], disable_jumps=False):
+def parse_intcode(program, ip, inputs=[], outputs=[], disable_jumps=False):
     if ip >= len(program):
-        return program
+        return program, outputs
     functions = {
         1: cf(3, lambda p, i, j, k: s(p, k, i + j)),
         2: cf(3, lambda p, i, j, k: s(p, k, i * j)),
         3: cf(1, lambda p, i: s(p, i, intcode_input(inputs))),
-        4: cf(1, lambda p, i: intcode_output(p, i)),
+        4: cf(1, lambda p, i: intcode_output(p, i, outputs)),
         5: cf2(2, lambda ip, x, y: y if x != 0 else ip + 3),
         6: cf2(2, lambda ip, x, y: y if x == 0 else ip + 3),
         7: cf(3, lambda p, i, j, k: s(p, k, 1 if i < j else 0)),
         8: cf(3, lambda p, i, j, k: s(p, k, 1 if i == j else 0)),
-        99: lambda p, i, inputs: (p, len(p), inputs),
+        99: lambda p, _, i, o: (p, len(p), i, o),
     }
     if disable_jumps:
         for i in [5, 6, 7, 8]:
             functions.pop(i)
     instruction = read_instruction(program, ip)[0]
-    return parse_intcode(*functions.get(instruction)(program, ip, inputs))
+    return parse_intcode(*functions.get(instruction)(program, ip, inputs, outputs))
 
 
 def str_to_program(string):
