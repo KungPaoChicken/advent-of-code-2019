@@ -3,19 +3,24 @@ def s(l, i, v):
     return l
 
 
-def read_parameters(x, i, n, ms):
-    return [x[i + 1 + j] if ms[j] else x[x[i + 1 + j]] for j in range(n)]
+def read_parameters(p, i, n, ms):
+    return [p[i + 1 + j] if ms[j] else p[p[i + 1 + j]] for j in range(n)]
 
 
 def cf(n, f):
-    return lambda x, i: (
-        f(x, *read_parameters(x, i, n, read_instruction(x, i)[1])),
-        i + n + 1,
+    return lambda p, ip, inputs: (
+        f(p, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
+        ip + n + 1,
+        inputs,
     )
 
 
 def cf2(n, f):
-    return lambda x, i: (x, f(i, *read_parameters(x, i, n, read_instruction(x, i)[1])))
+    return lambda p, ip, inputs: (
+        p,
+        f(ip, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
+        inputs,
+    )
 
 
 parameter_modes = {
@@ -30,8 +35,8 @@ parameter_modes = {
 }
 
 
-def read_instruction(x, i):
-    instruction = str(x[i])
+def read_instruction(p, i):
+    instruction = str(p[i])
 
     if len(instruction) > 2:
         opcode = instruction[-2:]
@@ -44,34 +49,36 @@ def read_instruction(x, i):
     return (int(opcode), modes)
 
 
-def intcode_input():
+def intcode_input(inputs=[]):
+    if inputs:
+        return inputs.pop(0)
     return int(input("Input: "))
 
 
-def intcode_output(x, i):
+def intcode_output(p, i):
     print(i)
-    return x
+    return p
 
 
-def parse_intcode(program, ip, disable_jumps=False):
+def parse_intcode(program, ip, inputs=[], disable_jumps=False):
     if ip >= len(program):
         return program
     functions = {
-        1: cf(3, lambda x, i, j, k: s(x, k, i + j)),
-        2: cf(3, lambda x, i, j, k: s(x, k, i * j)),
-        3: cf(1, lambda x, i: s(x, i, intcode_input())),
-        4: cf(1, lambda x, i: intcode_output(x, i)),
-        5: cf2(2, lambda i, x, y: y if x != 0 else i + 3),
-        6: cf2(2, lambda i, x, y: y if x == 0 else i + 3),
-        7: cf(3, lambda x, i, j, k: s(x, k, 1 if i < j else 0)),
-        8: cf(3, lambda x, i, j, k: s(x, k, 1 if i == j else 0)),
-        99: lambda x, i: (x, len(x)),
+        1: cf(3, lambda p, i, j, k: s(p, k, i + j)),
+        2: cf(3, lambda p, i, j, k: s(p, k, i * j)),
+        3: cf(1, lambda p, i: s(p, i, intcode_input(inputs))),
+        4: cf(1, lambda p, i: intcode_output(p, i)),
+        5: cf2(2, lambda ip, x, y: y if x != 0 else ip + 3),
+        6: cf2(2, lambda ip, x, y: y if x == 0 else ip + 3),
+        7: cf(3, lambda p, i, j, k: s(p, k, 1 if i < j else 0)),
+        8: cf(3, lambda p, i, j, k: s(p, k, 1 if i == j else 0)),
+        99: lambda p, i, inputs: (p, len(p), inputs),
     }
     if disable_jumps:
         for i in [5, 6, 7, 8]:
             functions.pop(i)
     instruction = read_instruction(program, ip)[0]
-    return parse_intcode(*functions.get(instruction)(program, ip))
+    return parse_intcode(*functions.get(instruction)(program, ip, inputs))
 
 
 def str_to_program(string):
