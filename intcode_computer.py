@@ -62,9 +62,9 @@ def intcode_output(p, i, outputs):
     return p
 
 
-def parse_intcode(program, ip, inputs=[], outputs=[], disable_jumps=False):
+def parse_intcode(program, ip, inputs=[], outputs=[], **kwargs):
     if ip >= len(program):
-        return program, outputs
+        return program, ip, inputs, outputs
     functions = {
         1: cf(3, lambda p, i, j, k: s(p, k, i + j)),
         2: cf(3, lambda p, i, j, k: s(p, k, i * j)),
@@ -76,11 +76,14 @@ def parse_intcode(program, ip, inputs=[], outputs=[], disable_jumps=False):
         8: cf(3, lambda p, i, j, k: s(p, k, 1 if i == j else 0)),
         99: lambda p, _, i, o: (p, len(p), i, o),
     }
-    if disable_jumps:
+    if kwargs.get("disable_jumps"):
         for i in [5, 6, 7, 8]:
             functions.pop(i)
     instruction = read_instruction(program, ip)[0]
-    return parse_intcode(*functions.get(instruction)(program, ip, inputs, outputs))
+    output = functions.get(instruction)(program, ip, inputs, outputs)
+    if kwargs.get("quit_on_output") and instruction == 4:
+        return output
+    return parse_intcode(*output, **kwargs)
 
 
 def str_to_program(string):
