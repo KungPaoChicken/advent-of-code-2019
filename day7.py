@@ -1,29 +1,30 @@
-from intcode_computer import str_to_program, parse_intcode
+from intcode_computer import init, parse
+from copy import deepcopy
 from itertools import permutations
 
 
 def amplifiers_config1(amplifiers, phase_settings, input_signal=0):
-    for i, amplifier in enumerate(amplifiers):
-        _, _, _, output = parse_intcode(
-            amplifier, 0, [phase_settings[i], input_signal], []
-        )
-        input_signal = output[0]
-    return output[0]
+    for i, amplifier in enumerate(deepcopy(amplifiers)):
+        amplifier["inputs"] = [phase_settings[i], input_signal]
+        outputs = parse(amplifier)
+        input_signal = outputs["outputs"][0]
+    return outputs["outputs"][0]
 
 
 def amplifiers_config2(amplifiers, phase_settings, input_signal=0):
     i = 0
-    ip = [0] * 5
-    inputs = [[p] for p in phase_settings]
-    inputs[0].append(input_signal)
+    amplifiers = deepcopy(amplifiers)
+    for a in range(5):
+        amplifiers[a]["inputs"] = [phase_settings[a]]
+    amplifiers[0]["inputs"].append(input_signal)
     while True:
-        amplifiers[i], ip[i], inputs[i], output = parse_intcode(
-            amplifiers[i], ip[i], inputs[i], [], quit_on_output=True
-        )
-        if output:
+        amplifiers[i] = parse(amplifiers[i], quit_on_output=True)
+        if amplifiers[i]["outputs"]:
+            output = amplifiers[i]["outputs"]
             last_output = output[0]
-            inputs[(i + 1) % 5].append(output[0])
+            amplifiers[i]["outputs"] = []
             i = (i + 1) % 5
+            amplifiers[i]["inputs"].extend(output)
             continue
         return last_output
 
@@ -40,10 +41,10 @@ def max_thruster_signal(amplifier_setup, phase_permutations):
     return max_signal
 
 
-program = str_to_program(open("day7-input.txt", "r").read())
+init_state = init(open("day7-input.txt", "r").read())
 
-setup1 = create_setup([program.copy() for i in range(5)], amplifiers_config1)
+setup1 = create_setup([deepcopy(init_state) for i in range(5)], amplifiers_config1)
 print(max_thruster_signal(setup1, [0, 1, 2, 3, 4]))
 
-setup2 = create_setup([program.copy() for i in range(5)], amplifiers_config2)
+setup2 = create_setup([deepcopy(init_state) for i in range(5)], amplifiers_config2)
 print(max_thruster_signal(setup2, [5, 6, 7, 8, 9]))

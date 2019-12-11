@@ -1,54 +1,40 @@
-def s(l, i, v):
-    l[i] = v
-    return l
+def set_state(s, k, v):
+    s[k] = v
+    return s
 
 
-def read_parameters(p, i, n, ms):
-    return [p[i + 1 + j] if ms[j] else p[p[i + 1 + j]] for j in range(n)]
+def set_memory(s, k, v):
+    s["memory"][k] = v
+    return s
 
 
-def cf(n, f):
-    return lambda p, ip, i, o: (
-        f(p, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
-        ip + n + 1,
-        i,
-        o,
-    )
-
-
-def cf2(n, f):
-    return lambda p, ip, i, o: (
-        p,
-        f(ip, *read_parameters(p, ip, n, read_instruction(p, ip)[1])),
-        i,
-        o,
-    )
-
-
-parameter_modes = {
-    1: [0, 0, 1],
-    2: [0, 0, 1],
-    3: [1],
-    4: [0],
-    5: [0, 0],
-    6: [0, 0],
-    7: [0, 0, 1],
-    8: [0, 0, 1],
-}
-
-
-def read_instruction(p, i):
-    instruction = str(p[i])
-
-    if len(instruction) > 2:
-        opcode = instruction[-2:]
-        modes = [int(i) for i in instruction[:-2][::-1]] + parameter_modes.get(
-            int(opcode)
-        )[len(instruction) - 2 :]
+def read_parameter(memory, index, mode, relative_base):
+    if mode == 0:
+        return memory[memory[index]]
+    elif mode == 1:
+        return memory[index]
     else:
-        opcode = instruction
-        modes = parameter_modes.get(int(opcode))
-    return (int(opcode), modes)
+        relative_base += index
+        return memory[memory[relative_base]]
+
+
+def read_parameters(state, n, modes):
+    return [
+        read_parameter(
+            state["memory"], state["ip"] + 1 + i, modes[i], state["relative_base"]
+        )
+        for i in range(n)
+    ]
+
+
+def read_instruction(s):
+    instruction = str(s["memory"][s["ip"]])
+    opcode = int(instruction[-2:])
+    # print(s["ip"], instruction, opcode)
+    modes = handlers.get(opcode)[1]
+    if len(instruction) > 2:
+        modes = [int(i) for i in instruction[:-2][::-1]] + modes[len(instruction) - 2 :]
+    return (opcode, modes)
 
 
 def intcode_input(inputs=[]):
@@ -62,29 +48,47 @@ def intcode_output(p, i, outputs):
     return p
 
 
-def parse_intcode(program, ip, inputs=[], outputs=[], **kwargs):
-    if ip >= len(program):
-        return program, ip, inputs, outputs
-    functions = {
-        1: cf(3, lambda p, i, j, k: s(p, k, i + j)),
-        2: cf(3, lambda p, i, j, k: s(p, k, i * j)),
-        3: cf(1, lambda p, i: s(p, i, intcode_input(inputs))),
-        4: cf(1, lambda p, i: intcode_output(p, i, outputs)),
-        5: cf2(2, lambda ip, x, y: y if x != 0 else ip + 3),
-        6: cf2(2, lambda ip, x, y: y if x == 0 else ip + 3),
-        7: cf(3, lambda p, i, j, k: s(p, k, 1 if i < j else 0)),
-        8: cf(3, lambda p, i, j, k: s(p, k, 1 if i == j else 0)),
-        99: lambda p, _, i, o: (p, len(p), i, o),
+handlers = {
+    1: (3, [0, 0, 1], lambda s, i, j, k: set_memory(s, k, i + j)),
+    2: (3, [0, 0, 1], lambda s, i, j, k: set_memory(s, k, i * j)),
+    3: (1, [1], lambda s, i: set_memory(s, i, intcode_input(s["inputs"]))),
+    4: (1, [0], lambda s, i: intcode_output(s, i, s["outputs"])),
+    5: (2, [0, 0], lambda s, x, y: set_state(s, "ip", y if x != 0 else s["ip"] + 3)),
+    6: (2, [0, 0], lambda s, x, y: set_state(s, "ip", y if x == 0 else s["ip"] + 3)),
+    7: (3, [0, 0, 1], lambda s, i, j, k: set_memory(s, k, 1 if i < j else 0)),
+    8: (3, [0, 0, 1], lambda s, i, j, k: set_memory(s, k, 1 if i == j else 0)),
+    9: (1, [0], lambda s, i: set_state(s, "relative_base", s["relative_base"] + i)),
+    99: (0, [], lambda s: set_state(s, "ip", s["program_end"])),
+}
+
+
+def parse(state, **kwargs):
+    inputs = state
+    if inputs["ip"] >= inputs["program_end"]:
+        return inputs
+
+    opcode, modes = read_instruction(inputs)
+    # print(inputs["ip"], opcode)
+    handler = handlers.get(opcode)
+    parameters = read_parameters(inputs, handler[0], modes)
+    # print(inputs["memory"].values())
+    outputs = handler[2](inputs, *parameters)
+    # print(outputs["memory"].values())
+    if opcode not in [5, 6]:
+        outputs["ip"] += handler[0] + 1
+    # print(inputs["ip"], outputs["ip"])
+    if kwargs.get("quit_on_output") and opcode == 4:
+        return outputs
+    return parse(outputs, **kwargs)
+
+
+def init(raw_program):
+    program = raw_program.split(",")
+    return {
+        "memory": {k: int(v) for k, v in enumerate(program)},
+        "program_end": len(program),
+        "ip": 0,
+        "inputs": [],
+        "outputs": [],
+        "relative_base": 0,
     }
-    if kwargs.get("disable_jumps"):
-        for i in [5, 6, 7, 8]:
-            functions.pop(i)
-    instruction = read_instruction(program, ip)[0]
-    output = functions.get(instruction)(program, ip, inputs, outputs)
-    if kwargs.get("quit_on_output") and instruction == 4:
-        return output
-    return parse_intcode(*output, **kwargs)
-
-
-def str_to_program(string):
-    return list(map(int, string.split(",")))

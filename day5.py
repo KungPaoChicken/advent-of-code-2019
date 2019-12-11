@@ -1,8 +1,12 @@
-from intcode_computer import str_to_program, parse_intcode
+from intcode_computer import init, parse
+from copy import deepcopy
 
-program = str_to_program(open("day5-input.txt").read())
+init_state = init(open("day5-input.txt").read())
 
-_, part1 = parse_intcode(program.copy(), 0, [1], [], disable_jumps=True)
-print(part1)
-_, part2 = parse_intcode(program.copy(), 0, [5], [])
-print(part2)
+part1_init = deepcopy(init_state)
+part1_init["inputs"] = [1]
+print(parse(part1_init)["outputs"])
+
+part2_init = deepcopy(init_state)
+part2_init["inputs"] = [5]
+print(parse(part2_init)["outputs"])
