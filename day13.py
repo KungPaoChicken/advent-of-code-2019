@@ -1,6 +1,6 @@
 from intcode_computer import init, parse
 from copy import deepcopy
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 
 def print_board(draw_instructions):
