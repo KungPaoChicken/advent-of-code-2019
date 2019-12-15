@@ -18,7 +18,7 @@ def amplifiers_config2(amplifiers, phase_settings, input_signal=0):
         amplifiers[a]["inputs"] = [phase_settings[a]]
     amplifiers[0]["inputs"].append(input_signal)
     while True:
-        amplifiers[i] = parse(amplifiers[i], quit_on_output=True)
+        amplifiers[i] = parse(amplifiers[i], quit_before_next_input=True)
         if amplifiers[i]["outputs"]:
             output = amplifiers[i]["outputs"]
             last_output = output[0]
