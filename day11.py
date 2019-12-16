@@ -41,8 +41,8 @@ def visualise_hull(hull):
         print(s)
 
 
-init_state = init(open("day11-input.txt", "r").read())
+program = init(open("day11-input.txt", "r").read())
 
-print(len(paint_hull(deepcopy(init_state)).keys()))
+print(len(paint_hull(deepcopy(program)).keys()))
 
-visualise_hull(paint_hull(deepcopy(init_state), start_white=True))
+visualise_hull(paint_hull(deepcopy(program), start_white=True))
