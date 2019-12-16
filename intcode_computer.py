@@ -70,21 +70,28 @@ handlers = {
     7: (3, [1, 1, 0], lambda s, i, j, k: set_memory(s, k, 1 if i < j else 0)),
     8: (3, [1, 1, 0], lambda s, i, j, k: set_memory(s, k, 1 if i == j else 0)),
     9: (1, [1], lambda s, i: set_state(s, "relative_base", s["relative_base"] + i)),
-    99: (0, [], lambda s: set_state(s, "ip", s["program_end"])),
+    99: (0, [], lambda s: set_state(s, "halt", True)),
 }
 
 
 def parse(state, **kwargs):
     inputs = state
+    if inputs["ip"] >= inputs["program_end"] or inputs.get("halt"):
+        return inputs
     while inputs["ip"] < inputs["program_end"]:
         opcode, modes = read_instruction(inputs)
+        if kwargs.get("quit_before_next_input"):
+            if state.get("outputted") and opcode == 3:
+                state["outputted"] = False
+                return inputs
         handler = handlers.get(opcode)
         parameters = read_parameters(inputs, handler[0], modes, handler[1])
         outputs = handler[2](inputs, *parameters)
         if opcode not in [5, 6]:
             outputs["ip"] += handler[0] + 1
-        if kwargs.get("quit_on_output") and opcode == 4:
-            return outputs
+        if kwargs.get("quit_before_next_input"):
+            if opcode == 4:
+                state["outputted"] = True
     return outputs
 
 
