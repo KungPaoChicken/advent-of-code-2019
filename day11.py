@@ -32,11 +32,11 @@ def paint_hull(state, start_white=False):
 
 def visualise_hull(hull):
     x, y = zip(*hull.keys())
-    minx, miny, maxx, maxy = abs(min(x)), abs(min(y)), max(x), max(y)
-    hull = {(x + minx, y + miny): c for (x, y), c in hull.items()}
-    for y in range(maxy + miny, -1, -1):
+    minx, miny, maxx, maxy = min(x), min(y), max(x), max(y)
+    hull = {(x, y): c for (x, y), c in hull.items()}
+    for y in range(maxy, miny - 1, -1):
         s = ""
-        for x in range(maxx + minx):
+        for x in range(minx, maxx):
             s += "#" if hull.get((x, y)) else " "
         print(s)
 
