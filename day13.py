@@ -8,11 +8,11 @@ def print_board(draw_instructions):
     for x, y, t in draw_instructions:
         screen[(x, y)] = t
 
-    symbols = [" ", ".", "#", "_", "O"]
+    symbols = [" ", "█", "#", "_", "O"]
     print("SCORE", screen[(-1, 0)])
     for y in range(19):
         p = ""
-        for x in range(37):
+        for x in range(38):
             p += symbols[screen[(x, y)]]
         print(p)
 
@@ -24,7 +24,6 @@ def play(game, visualise=False):
         game["inputs"] = [joystick]
         game = parse(game, quit_before_next_input=True)
         outputs = game["outputs"]
-        draw_instructions = defaultdict(list)
         len_blanks = 0
         for i in range(0, len(outputs), 3):
             x, y, t = outputs[i : i + 3]
@@ -46,7 +45,7 @@ def play(game, visualise=False):
         else:
             joystick = 0
         if visualise:
-            print_board(draw_instructions)
+            print_board([outputs[x : x + 3] for x in range(0, len(outputs), 3)])
 
 
 game = init(open("day13-input.txt", "r").read())
