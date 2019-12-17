@@ -70,7 +70,11 @@ handlers = {
     7: (3, [1, 1, 0], lambda s, i, j, k: set_memory(s, k, 1 if i < j else 0)),
     8: (3, [1, 1, 0], lambda s, i, j, k: set_memory(s, k, 1 if i == j else 0)),
     9: (1, [1], lambda s, i: set_state(s, "relative_base", s["relative_base"] + i)),
-    99: (0, [], lambda s: set_state(s, "halt", True)),
+    99: (
+        0,
+        [],
+        lambda s: set_state(set_state(s, "halt", True), "ip", s["program_end"]),
+    ),
 }
 
 
