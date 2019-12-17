@@ -37,7 +37,7 @@ def visualise_hull(hull):
     for y in range(maxy, miny - 1, -1):
         s = ""
         for x in range(minx, maxx):
-            s += "#" if hull.get((x, y)) else " "
+            s += "█" if hull.get((x, y)) else " "
         print(s)
 
 
