@@ -1,38 +1,24 @@
-from itertools import cycle
+from itertools import cycle, accumulate
 
 
 def pattern(i):
-    new_pattern = [x for p in [0, 1, 0, -1] for x in [p] * i]
-    return cycle(new_pattern)
+    return cycle(x for p in (0, 1, 0, -1) for x in (p,) * i)
 
 
 def fft(inputs):
     l = len(inputs)
-    inputs = [int(i) for i in inputs]
-    return "".join(
-        [
-            str(
-                sum(
-                    [k for j in range(i, l, 4 * (i + 1)) for k in inputs[j : j + i + 1]]
-                )
-                - sum(
-                    [
-                        k
-                        for j in range(i + 2 * (i + 1), l, 4 * (i + 1))
-                        for k in inputs[j : j + i + 1]
-                    ]
-                )
-            )[-1]
-            for i in range(l)
-        ]
+    return tuple(
+        abs(
+            sum(k for j in range(i - 1, l, 4 * i) for k in inputs[j : j + i])
+            - sum(k for j in range(i - 1 + 2 * i, l, 4 * i) for k in inputs[j : j + i])
+        )
+        % 10
+        for i in range(1, l + 1)
     )
 
 
 def decode(inputs):
-    o = inputs[-1]
-    for i in range(-2, -len(inputs) - 1, -1):
-        o += str(int(o[-1]) + int(inputs[i]))[-1]
-    return "".join(o[::-1])
+    return tuple(accumulate(inputs[::-1], lambda a, b: (a + b) % 10))[::-1]
 
 
 def repeat(f, inputs, n):
@@ -41,10 +27,12 @@ def repeat(f, inputs, n):
     return inputs
 
 
-signal = open("day16-input.txt", "r").read()
-part1 = signal
-print(repeat(fft, part1, 100)[:8])
+to_str = lambda i: "".join(map(str, i))
 
-offset = int(signal[:7])
-real_signal = (signal * 10000)[offset:]
-print(repeat(decode, real_signal, 100)[:8])
+signal = tuple(int(s) for s in open("day16-input.txt", "r").read())
+part1 = signal
+print(to_str(repeat(fft, part1, 100)[:8]))
+
+offset = int("".join(map(str, signal[:7])))
+real_signal = tuple((signal * 10000)[offset:])
+print(to_str(repeat(decode, real_signal, 100)[:8]))
