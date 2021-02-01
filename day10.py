@@ -1,4 +1,4 @@
-from math import atan2, pi, sin, cos
+from math import atan2, pi
 from collections import defaultdict, OrderedDict
 
 
